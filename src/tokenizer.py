@@ -3,6 +3,7 @@ from __future__ import annotations
 from importlib.metadata import version
 
 import tiktoken
+import torch
 
 TIKTOKEN_ENCODING_MODEL = "gpt2"
 
@@ -18,7 +19,7 @@ through encode / decode unchanged.
 '''
 
 # the loaded tiktoken encoding (GPT-2 BPE vocabulary).
-tokenizer = tiktoken.get_encoding(TIKTOKEN_ENCODING_MODEL)
+GPT2_TOKENIZER = tiktoken.get_encoding(TIKTOKEN_ENCODING_MODEL)
 
 
 # tiktoken's single GPT-2 special token: end-of-text (document separator).
@@ -38,9 +39,20 @@ def encode(text: str, *, allowed_special: str = "all") -> list[int]:
 doc2") returns a list that decodes back to the original text.
     Pass allowed_special=set() to make special tokens raise instead.
     """
-    return tokenizer.encode(text, allowed_special=allowed_special)
+    return GPT2_TOKENIZER.encode(text, allowed_special=allowed_special)
 
 
 def decode(token_ids: list[int]) -> str:
     """Decode a list of token ids back into text."""
-    return tokenizer.decode(token_ids)
+    return GPT2_TOKENIZER.decode(token_ids)
+
+def textToTokenIdsTensor(text, tokenizerToUse):
+    '''return batch tokens tenosr 2-D'''
+    encoded = tokenizerToUse.encode(text, allowed_special={'<|endoftext|>'})
+    return torch.tensor(encoded).unsqueeze(0)
+
+def tokenIdsTensorToText(tokenIdsTensor, tokenizerToUse):
+    '''retrun a string of words
+    inoput: 2D tensor'''
+    flat = tokenIdsTensor.squeeze(0)
+    return tokenizerToUse.decode(flat.tolist())
